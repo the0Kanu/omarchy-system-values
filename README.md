@@ -15,11 +15,11 @@ Ein universelles Omarchy-Bar-Plugin für automatisch erkannte CPU- und GPU-Werte
 
 ## Installation
 
-1. Dieses Verzeichnis nach `~/.config/omarchy/plugins/kanu.system-values/` kopieren.
+1. Dieses Verzeichnis nach `~/.config/omarchy/plugins/user.system-values/` kopieren.
 2. In `~/.config/omarchy/shell.json` innerhalb der gewünschten Bar-Sektion eintragen:
 
 ```json
-{ "id": "kanu.system-values" }
+{ "id": "user.system-values" }
 ```
 
 3. Die Omarchy-Shell neu laden:
@@ -31,7 +31,7 @@ omarchy restart shell
 ## Entfernung
 
 ```bash
-omarchy plugin remove kanu.system-values
+omarchy plugin remove user.system-values
 omarchy restart shell
 ```
 
@@ -42,19 +42,19 @@ Voraussetzungen: `bash`, `awk`, `sed`, `lspci` und optional `nvidia-smi` für NV
 Das Laufzeitlog liegt standardmäßig unter:
 
 ```text
-~/.local/state/kanu-system-values/system-values.log
+~/.local/state/omarchy-system-values/system-values.log
 ```
 
 Manueller Status-Test:
 
 ```bash
-~/.config/omarchy/plugins/kanu.system-values/system-values.sh
+~/.config/omarchy/plugins/user.system-values/system-values.sh
 ```
 
 Kontrollagent:
 
 ```bash
-~/.config/omarchy/plugins/kanu.system-values/system-values-control.sh
+~/.config/omarchy/plugins/user.system-values/system-values-control.sh
 ```
 
 Der Kontrollagent prüft Syntax, JSON, Hardware-Erkennung, Logsystem,

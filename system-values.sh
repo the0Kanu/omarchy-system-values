@@ -5,10 +5,10 @@ set -u
 # CPU<TAB>model<TAB>temperature<TAB>utilization<TAB>load<TAB>source<TAB>status
 # GPU<TAB>index<TAB>model<TAB>temperature<TAB>utilization<TAB>memory-used<TAB>memory-total<TAB>state<TAB>status<TAB>vendor
 
-log_dir="${XDG_STATE_HOME:-$HOME/.local/state}/kanu-system-values"
+log_dir="${XDG_STATE_HOME:-$HOME/.local/state}/omarchy-system-values"
 log_file="$log_dir/system-values.log"
 if ! mkdir -p "$log_dir" 2>/dev/null || ! printf '' >> "$log_file" 2>/dev/null; then
-  log_dir="${TMPDIR:-/tmp}/kanu-system-values"
+  log_dir="${TMPDIR:-/tmp}/omarchy-system-values"
   log_file="$log_dir/system-values.log"
   mkdir -p "$log_dir" 2>/dev/null || true
 fi
@@ -44,7 +44,7 @@ done
 read -r _ user nice system idle iowait irq softirq steal _ < /proc/stat
 now_total=$((user + nice + system + idle + iowait + irq + softirq + steal))
 now_idle=$((idle + iowait))
-state_file="${XDG_RUNTIME_DIR:-/tmp}/kanu-system-values-cpu.state"
+state_file="$log_dir/cpu.state"
 util="--"
 if [[ -r "$state_file" ]]; then
   read -r old_total old_idle < "$state_file" || true

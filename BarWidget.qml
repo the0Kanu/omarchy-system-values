@@ -6,7 +6,7 @@ import qs.Ui
 
 BarWidget {
   id: root
-  moduleName: "kanu.system-values"
+  moduleName: "user.system-values"
 
   property var components: []
   property var gpus: []
@@ -20,7 +20,7 @@ BarWidget {
   readonly property string configHome: Quickshell.env("XDG_CONFIG_HOME") !== ""
     ? Quickshell.env("XDG_CONFIG_HOME")
     : Quickshell.env("HOME") + "/.config"
-  readonly property string helperPath: root.configHome + "/omarchy/plugins/kanu.system-values/system-values.sh"
+  readonly property string helperPath: root.configHome + "/omarchy/plugins/user.system-values/system-values.sh"
 
   function open() { popupOpen = true }
   function close() { popupOpen = false }

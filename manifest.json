@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
-  "id": "kanu.system-values",
+  "id": "user.system-values",
   "name": "Systemwerte",
   "version": "1.0.0",
-  "author": "Kanu",
+  "author": "Omarchy Community",
   "license": "MIT",
   "description": "Automatisch erkannte CPU- und GPU-Systemwerte in der Omarchy-Leiste.",
   "kinds": ["bar-widget"],

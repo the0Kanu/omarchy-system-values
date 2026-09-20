@@ -8,7 +8,7 @@ BASE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 HELPER="$BASE/system-values.sh"
 MANIFEST="$BASE/manifest.json"
 SHELL_CONFIG="$HOME/.config/omarchy/shell.json"
-LOG_FILE="${XDG_STATE_HOME:-$HOME/.local/state}/kanu-system-values/system-values.log"
+LOG_FILE="${XDG_STATE_HOME:-$HOME/.local/state}/omarchy-system-values/system-values.log"
 score=0
 details=()
 
