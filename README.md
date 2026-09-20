@@ -13,6 +13,7 @@ Ein universelles Omarchy-Bar-Plugin für automatisch erkannte CPU- und GPU-Werte
 - Laufzeitlog mit Zeitstempeln und Rotation bei 512 KiB
 - Kontrollagent mit Bewertung von 0 bis 10
 - Nebenläufige Statusabfragen werden über eine Zustandsdatei-Sperre synchronisiert
+- Standard-Aktualisierung: 10 Sekunden; manuelle Aktualisierung per Rechtsklick
 - Keine Änderungen an Treibern oder Systemdiensten
 
 ## Installation

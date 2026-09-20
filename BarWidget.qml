@@ -14,7 +14,7 @@ BarWidget {
   property string queryError: ""
   property bool popupOpen: false
   property bool refreshing: false
-  readonly property int refreshIntervalSec: setting("refreshIntervalSec", 5)
+  readonly property int refreshIntervalSec: setting("refreshIntervalSec", 10)
   readonly property color foreground: "#cacccc"
   readonly property color urgent: "#a55555"
   readonly property string configHome: Quickshell.env("XDG_CONFIG_HOME") !== ""
@@ -132,12 +132,11 @@ BarWidget {
     }
     onExited: {
       root.refreshing = false
-      if (root.popupOpen) root.refresh()
     }
   }
 
   Timer {
-    interval: Math.max(2000, root.refreshIntervalSec * 1000)
+    interval: Math.max(5000, root.refreshIntervalSec * 1000)
     running: true
     repeat: true
     onTriggered: root.refresh()

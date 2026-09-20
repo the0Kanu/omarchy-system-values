@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "user.system-values",
   "name": "Systemwerte",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "author": "Omarchy Community",
   "license": "MIT",
   "description": "Automatisch erkannte CPU- und GPU-Systemwerte in der Omarchy-Leiste.",
@@ -17,17 +17,17 @@
     "defaultSection": "right",
     "allowMultiple": false,
     "defaults": {
-      "refreshIntervalSec": 5
+      "refreshIntervalSec": 10
     },
     "schema": [
       {
         "key": "refreshIntervalSec",
         "type": "integer",
         "label": "Refresh interval (seconds)",
-        "min": 2,
+        "min": 5,
         "max": 60,
         "step": 1,
-        "defaultValue": 5
+        "defaultValue": 10
       }
     ]
   }
