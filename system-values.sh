@@ -18,6 +18,10 @@ fi
 log() {
   printf '%s [%s] %s\n' "$(date '+%Y-%m-%d %H:%M:%S%z')" "$1" "$2" >> "$log_file" 2>/dev/null || true
 }
+format_temp() {
+  local raw="$1"
+  awk -v raw="$raw" 'BEGIN { if (raw ~ /^[0-9]+$/) printf "%.1f", raw / 1000; else printf "%s", raw }'
+}
 start_ns=$(date +%s%N 2>/dev/null || date +%s)
 log INFO "status poll gestartet; pid=$$"
 
@@ -35,7 +39,7 @@ for preferred_type in x86_pkg_temp coretemp TCPU_PCI; do
     raw=$(cat "$zone/temp")
     if [[ "$raw" =~ ^[0-9]+$ ]]; then
       cpu_type="$type"
-      cpu_temp=$((raw / 1000))
+      cpu_temp=$(format_temp "$raw")
       break 2
     fi
   done
@@ -46,15 +50,20 @@ now_total=$((user + nice + system + idle + iowait + irq + softirq + steal))
 now_idle=$((idle + iowait))
 state_file="$log_dir/cpu.state"
 util="--"
+state_lock="$state_file.lock"
+if exec 9>"$state_lock" 2>/dev/null && command -v flock >/dev/null 2>&1; then
+  flock -x 9 2>/dev/null || true
+fi
 if [[ -r "$state_file" ]]; then
   read -r old_total old_idle < "$state_file" || true
   total_delta=$((now_total - old_total))
   idle_delta=$((now_idle - old_idle))
   if (( total_delta > 0 )); then
-    util=$(( (100 * (total_delta - idle_delta)) / total_delta ))
+    util=$(awk -v busy="$((total_delta - idle_delta))" -v total="$total_delta" 'BEGIN { printf "%.1f", 100 * busy / total }')
   fi
 fi
 printf '%s %s\n' "$now_total" "$now_idle" > "$state_file"
+exec 9>&- 2>/dev/null || true
 load=$(awk '{print $1}' /proc/loadavg)
 
 if [[ -n "$cpu_temp" ]]; then
@@ -105,7 +114,7 @@ if command -v lspci >/dev/null 2>&1; then
       for input in "$hw"/temp*_input; do
         [[ -r "$input" ]] || continue
         raw=$(cat "$input")
-        if [[ "$raw" =~ ^[0-9]+$ ]]; then temp=$((raw / 1000)); break; fi
+        if [[ "$raw" =~ ^[0-9]+$ ]]; then temp=$(format_temp "$raw"); break; fi
       done
       break
     done

@@ -5,12 +5,14 @@ Ein universelles Omarchy-Bar-Plugin für automatisch erkannte CPU- und GPU-Werte
 ## Funktionen
 
 - CPU-Modell, Temperatur, Auslastung und Load Average
+- Temperatur und Auslastung mit einer Nachkommastelle, soweit die Rohdaten das zulassen
 - NVIDIA-GPUs über `nvidia-smi`
 - Intel-, AMD- und weitere PCI-GPUs über `lspci`/sysfs
 - Temperatur, Auslastung, Speicher und P-State, sofern der Treiber diese Werte bereitstellt
 - Nur tatsächlich erkannte Komponenten werden angezeigt
 - Laufzeitlog mit Zeitstempeln und Rotation bei 512 KiB
 - Kontrollagent mit Bewertung von 0 bis 10
+- Nebenläufige Statusabfragen werden über eine Zustandsdatei-Sperre synchronisiert
 - Keine Änderungen an Treibern oder Systemdiensten
 
 ## Installation

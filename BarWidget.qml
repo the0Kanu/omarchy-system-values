@@ -73,22 +73,22 @@ BarWidget {
   }
 
   function cpuTempNumber() {
-    var value = parseInt(String(cpu.temperature || ""), 10)
+    var value = parseFloat(String(cpu.temperature || ""))
     return isFinite(value) ? value : -1
   }
 
   function tempNumber(gpu) {
-    var value = parseInt(String(gpu && gpu.temperature || ""), 10)
+    var value = parseFloat(String(gpu && gpu.temperature || ""))
     return isFinite(value) ? value : -1
   }
 
-  readonly property int hottestTemperature: {
+  readonly property real hottestTemperature: {
     var hottest = -1
     for (var i = 0; i < gpus.length; i++) hottest = Math.max(hottest, tempNumber(gpus[i]))
     return hottest
   }
 
-  readonly property int hottestComponentTemperature: Math.max(hottestTemperature, cpuTempNumber())
+  readonly property real hottestComponentTemperature: Math.max(hottestTemperature, cpuTempNumber())
 
   readonly property bool hasError: {
     if (queryError !== "") return true
