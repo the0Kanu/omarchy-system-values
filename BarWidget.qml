@@ -12,8 +12,10 @@ BarWidget {
   property var gpus: []
   property var cpu: ({ temperature: "--", source: "", status: "error" })
   property string queryError: ""
+  property string lastNotificationKey: ""
   property bool popupOpen: false
   property bool refreshing: false
+  property string omarchyPath: Quickshell.env("OMARCHY_PATH")
   readonly property int refreshIntervalSec: setting("refreshIntervalSec", 10)
   readonly property color foreground: "#cacccc"
   readonly property color urgent: "#a55555"
@@ -30,6 +32,39 @@ BarWidget {
     if (refreshing || !statusProcess) return
     refreshing = true
     statusProcess.running = true
+  }
+
+  function sendNotification(headline, body) {
+    if (!root.omarchyPath) return
+    Quickshell.execDetached([
+      root.omarchyPath + "/bin/omarchy-notification-send",
+      "--app-name", "Hardware Values",
+      "--urgency", "low",
+      "--expire-time", "5000",
+      headline,
+      body
+    ])
+  }
+
+  function evaluateNotification() {
+    var key = ""
+    var body = ""
+    if (root.queryError !== "") {
+      key = "query-error"
+      body = root.queryError
+    } else if (root.cpu.status !== "ok") {
+      key = "cpu-error"
+      body = "CPU temperature is unavailable."
+    } else if (root.hottestComponentTemperature >= 90) {
+      key = "high-temperature"
+      body = "Hardware temperature is high: " + root.hottestComponentTemperature.toFixed(1) + " °C"
+    } else {
+      root.lastNotificationKey = ""
+      return
+    }
+    if (key === root.lastNotificationKey) return
+    root.lastNotificationKey = key
+    root.sendNotification("Hardware Values", body)
   }
 
   function parseStatus(raw) {
@@ -70,6 +105,7 @@ BarWidget {
     cpu = detectedCpu || ({ temperature: "--", source: "", status: "error" })
     components = all
     gpus = next
+    root.evaluateNotification()
   }
 
   function cpuTempNumber() {
@@ -128,7 +164,10 @@ BarWidget {
     }
     stderr: StdioCollector {
       waitForEnd: true
-      onStreamFinished: root.queryError = String(text || "").trim()
+      onStreamFinished: {
+        root.queryError = String(text || "").trim()
+        root.evaluateNotification()
+      }
     }
     onExited: {
       root.refreshing = false
@@ -151,8 +190,8 @@ BarWidget {
     hasVisualContent: true
     foreground: root.indicatorColor
     tooltipText: root.hasError
-      ? "Systemwerte: mindestens eine Komponente meldet einen Fehler"
-      : "Systemwerte öffnen"
+      ? "Hardware Values: at least one component reports an error"
+      : "Open Hardware Values"
     onPressed: function(buttonCode) {
       if (buttonCode === Qt.RightButton) root.refresh()
       else root.toggle()
@@ -183,7 +222,7 @@ BarWidget {
         spacing: Style.space(2)
 
         Text {
-          text: "Systemwerte"
+          text: "Hardware Values"
           color: root.foreground
           font.family: root.bar ? root.bar.fontFamily : Style.font.family
           font.pixelSize: Style.font.heading
@@ -191,7 +230,7 @@ BarWidget {
         }
 
         Text {
-          text: root.components.length + " Komponenten erkannt"
+          text: root.components.length + " components detected"
           color: Qt.darker(root.foreground, 1.5)
           font.family: root.bar ? root.bar.fontFamily : Style.font.family
           font.pixelSize: Style.font.caption
@@ -201,7 +240,7 @@ BarWidget {
       Text {
         width: parent.width
         visible: root.queryError !== ""
-        text: "Treiberhinweis: " + root.queryError
+        text: "Driver notice: " + root.queryError
         textFormat: Text.PlainText
         wrapMode: Text.Wrap
         color: root.urgent
@@ -224,10 +263,10 @@ BarWidget {
         Text {
           width: parent.width
           text: root.cpu.status === "ok"
-            ? "Modell: " + root.cpu.name
-              + "\nTemperatur: " + root.cpu.temperature + " °C   Auslastung: " + root.cpu.utilization + " %"
-              + "\nLast (1 min): " + root.cpu.load + "   Quelle: " + root.cpu.source
-            : "Temperatur: nicht verfügbar"
+            ? "Model: " + root.cpu.name
+              + "\nTemperature: " + root.cpu.temperature + " °C   Utilization: " + root.cpu.utilization + " %"
+              + "\nLoad (1 min): " + root.cpu.load + "   Source: " + root.cpu.source
+            : "Temperature unavailable"
           textFormat: Text.PlainText
           color: root.cpu.status === "ok" ? Qt.darker(root.foreground, 1.25) : root.urgent
           font.family: root.bar ? root.bar.fontFamily : Style.font.family
@@ -267,7 +306,7 @@ BarWidget {
 
             Text {
               id: stateText
-              text: modelData.status === "ok" ? modelData.pstate : "FEHLER"
+              text: modelData.status === "ok" ? modelData.pstate : "ERROR"
               color: modelData.status === "ok" ? root.foreground : root.urgent
               font.family: root.bar ? root.bar.fontFamily : Style.font.family
               font.pixelSize: Style.font.caption
@@ -278,9 +317,9 @@ BarWidget {
           Text {
             width: parent.width
             text: modelData.status === "ok"
-              ? "Temperatur: " + modelData.temperature + " °C   Auslastung: " + modelData.utilization + " %"
-                + "\nSpeicher: " + modelData.memoryUsed + " / " + modelData.memoryTotal + " MiB"
-              : "Temperatur: nicht verfügbar\nGPU liefert keinen gültigen Gerätestatus"
+              ? "Temperature: " + modelData.temperature + " °C   Utilization: " + modelData.utilization + " %"
+                + "\nMemory: " + modelData.memoryUsed + " / " + modelData.memoryTotal + " MiB"
+              : "Temperature unavailable\nGPU does not provide a valid device status"
             textFormat: Text.PlainText
             color: modelData.status === "ok" ? Qt.darker(root.foreground, 1.25) : root.urgent
             font.family: root.bar ? root.bar.fontFamily : Style.font.family
@@ -291,7 +330,7 @@ BarWidget {
 
       Text {
         visible: root.gpus.length === 0
-        text: "Keine GPU erkannt"
+        text: "No GPU detected"
         color: root.urgent
         font.family: root.bar ? root.bar.fontFamily : Style.font.family
         font.pixelSize: Style.font.body

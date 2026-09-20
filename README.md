@@ -1,71 +1,69 @@
-# Omarchy Systemwerte
+# Omarchy Hardware Values
 
-Ein universelles Omarchy-Bar-Plugin für automatisch erkannte CPU- und GPU-Werte.
+A universal Omarchy bar plugin for automatically detected CPU and GPU values.
 
-## Funktionen
+## Features
 
-- CPU-Modell, Temperatur, Auslastung und Load Average
-- Temperatur und Auslastung mit einer Nachkommastelle, soweit die Rohdaten das zulassen
-- NVIDIA-GPUs über `nvidia-smi`
-- Intel-, AMD- und weitere PCI-GPUs über `lspci`/sysfs
-- Temperatur, Auslastung, Speicher und P-State, sofern der Treiber diese Werte bereitstellt
-- Nur tatsächlich erkannte Komponenten werden angezeigt
-- Laufzeitlog mit Zeitstempeln und Rotation bei 512 KiB
-- Kontrollagent mit Bewertung von 0 bis 10
-- Nebenläufige Statusabfragen werden über eine Zustandsdatei-Sperre synchronisiert
-- Standard-Aktualisierung: 10 Sekunden; manuelle Aktualisierung per Rechtsklick
-- Keine Änderungen an Treibern oder Systemdiensten
+- CPU model, temperature, utilization and load average
+- Temperature and utilization with one decimal place where raw data allows it
+- NVIDIA GPUs via `nvidia-smi`
+- Intel, AMD and other PCI GPUs via `lspci`/sysfs
+- Temperature, utilization, memory and performance state when supported by the driver
+- Only detected hardware components are displayed
+- Runtime logging with timestamps and 512 KiB rotation
+- Hardware warnings through Omarchy notifications with a 5-second timeout
+- Concurrent status queries synchronized with a state-file lock
+- Standard refresh interval: 10 seconds; right-click for a manual refresh
+- No changes to drivers or system services
 
 ## Installation
 
-Direkt aus GitHub installieren und aktivieren:
+Install and enable directly from GitHub:
 
 ```bash
 omarchy plugin add https://github.com/the0Kanu/omarchy-system-values --enable
 ```
 
-Falls das Plugin in einen bestimmten Bar-Bereich verschoben werden soll:
+To place the widget in a specific bar section:
 
 ```bash
 omarchy bar move user.system-values --section right
 ```
 
-Die Installation legt das Plugin automatisch unter
-`~/.config/omarchy/plugins/user.system-values/` ab und aktiviert es in der
-Omarchy-Shell.
+The plugin is installed at `~/.config/omarchy/plugins/user.system-values/`.
 
-## Entfernung
+## Removal
 
 ```bash
 omarchy plugin remove user.system-values
 omarchy restart shell
 ```
 
-Voraussetzungen: `bash`, `awk`, `sed`, `lspci` und optional `nvidia-smi` für NVIDIA-Werte.
+Requirements: `bash`, `awk`, `sed`, `lspci`, and optionally `nvidia-smi` for NVIDIA metrics.
 
 ## Debugging
 
-Das Laufzeitlog liegt standardmäßig unter:
+The runtime log is stored at:
 
 ```text
 ~/.local/state/omarchy-system-values/system-values.log
 ```
 
-Manueller Status-Test:
+Manual status test:
 
 ```bash
 ~/.config/omarchy/plugins/user.system-values/system-values.sh
 ```
 
-Kontrollagent:
+Control agent:
 
 ```bash
 ~/.config/omarchy/plugins/user.system-values/system-values-control.sh
 ```
 
-Der Kontrollagent prüft Syntax, JSON, Hardware-Erkennung, Logsystem,
-Quickshell-Fehler und doppelte Komponenten. Zielwert ist mindestens 9/10.
+The control agent checks syntax, JSON, hardware detection, logging,
+Quickshell errors and duplicate components. The target score is at least 9/10.
 
-## Lizenz
+## License
 
-MIT. Siehe `LICENSE`.
+MIT. See `LICENSE`.

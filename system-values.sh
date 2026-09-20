@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -u
 
-# Records:
+# Output records:
 # CPU<TAB>model<TAB>temperature<TAB>utilization<TAB>load<TAB>source<TAB>status
 # GPU<TAB>index<TAB>model<TAB>temperature<TAB>utilization<TAB>memory-used<TAB>memory-total<TAB>state<TAB>status<TAB>vendor
 
@@ -23,7 +23,7 @@ format_temp() {
   awk -v raw="$raw" 'BEGIN { if (raw ~ /^[0-9]+$/) printf "%.1f", raw / 1000; else printf "%s", raw }'
 }
 start_ns=$(date +%s%N 2>/dev/null || date +%s)
-log INFO "status poll gestartet; pid=$$"
+  log INFO "status poll started; pid=$$"
 
 cpu_name=$(awk -F: '/^model name[[:space:]]*:/ {sub(/^[[:space:]]*/, "", $2); print $2; exit}' /proc/cpuinfo)
 [[ -n "$cpu_name" ]] || cpu_name=$(awk -F: '/^Hardware[[:space:]]*:/ {sub(/^[[:space:]]*/, "", $2); print $2; exit}' /proc/cpuinfo)
@@ -68,10 +68,10 @@ load=$(awk '{print $1}' /proc/loadavg)
 
 if [[ -n "$cpu_temp" ]]; then
   printf 'CPU\t%s\t%s\t%s\t%s\t%s\tok\n' "$cpu_name" "$cpu_temp" "$util" "$load" "$cpu_type"
-  log INFO "CPU erkannt: model=$cpu_name temp=${cpu_temp}C util=${util}% load=$load source=$cpu_type"
+  log INFO "CPU detected: model=$cpu_name temp=${cpu_temp}C util=${util}% load=$load source=$cpu_type"
 else
   printf 'CPU\t%s\t--\t%s\t%s\t--\terror\n' "$cpu_name" "$util" "$load"
-  log WARN "CPU-Temperatur nicht verfügbar: model=$cpu_name util=${util}% load=$load"
+  log WARN "CPU temperature unavailable: model=$cpu_name util=${util}% load=$load"
 fi
 
 gpu_index=0
@@ -86,11 +86,11 @@ if command -v nvidia-smi >/dev/null 2>&1; then
     mem_total=$(printf '%s' "$mem_total" | xargs)
     pstate=$(printf '%s' "$pstate" | xargs)
     printf 'GPU\t%s\t%s\t%s\t%s\t%s\t%s\t%s\tok\tNVIDIA\n' "$gpu_index" "$name" "$temp" "$util" "$mem_used" "$mem_total" "$pstate"
-    log INFO "NVIDIA-GPU erkannt: index=$index model=$name temp=${temp}C util=${util}% memory=${mem_used}/${mem_total}MiB state=$pstate"
+    log INFO "NVIDIA GPU detected: index=$index model=$name temp=${temp}C util=${util}% memory=${mem_used}/${mem_total}MiB state=$pstate"
     gpu_index=$((gpu_index + 1))
     nvidia_count=$((nvidia_count + 1))
   done < <(nvidia-smi --query-gpu=index,name,temperature.gpu,utilization.gpu,memory.used,memory.total,pstate --format=csv,noheader,nounits 2>/dev/null || true)
-  [[ "$nvidia_count" -gt 0 ]] || log WARN "nvidia-smi ist vorhanden, lieferte aber keine GPU-Daten"
+  [[ "$nvidia_count" -gt 0 ]] || log WARN "nvidia-smi is available but returned no GPU data"
 fi
 
 # Detect non-NVIDIA display adapters from PCI. NVIDIA devices are already
@@ -127,11 +127,11 @@ if command -v lspci >/dev/null 2>&1; then
       fi
     done
     printf 'GPU\t%s\t%s\t%s\t%s\t--\t--\t--\tok\t%s\n' "$gpu_index" "$name" "$temp" "$util" "$vendor"
-    log INFO "$vendor-GPU erkannt: model=$name temp=${temp}C util=${util}%"
+    log INFO "$vendor GPU detected: model=$name temp=${temp}C util=${util}%"
     gpu_index=$((gpu_index + 1))
     other_count=$((other_count + 1))
   done < <(lspci -D 2>/dev/null | rg -i 'VGA compatible controller|3D controller|Display controller' | rg -vi 'NVIDIA' || true)
 fi
 
 end_ns=$(date +%s%N 2>/dev/null || date +%s)
-log INFO "status poll beendet; cpu=1 gpus=$gpu_index dauer_ns=$((end_ns - start_ns))"
+log INFO "status poll finished; cpu=1 gpus=$gpu_index duration_ns=$((end_ns - start_ns))"

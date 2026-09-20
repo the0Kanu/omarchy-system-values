@@ -1,18 +1,18 @@
 {
   "schemaVersion": 1,
   "id": "user.system-values",
-  "name": "Systemwerte",
-  "version": "1.0.1",
+  "name": "Hardware Values",
+  "version": "1.0.2",
   "author": "Omarchy Community",
   "license": "MIT",
-  "description": "Automatisch erkannte CPU- und GPU-Systemwerte in der Omarchy-Leiste.",
+  "description": "Automatically detected CPU and GPU hardware values in the Omarchy bar.",
   "kinds": ["bar-widget"],
   "entryPoints": {
     "barWidget": "BarWidget.qml"
   },
   "barWidget": {
-    "displayName": "Systemwerte",
-    "description": "CPU- und GPU-Temperatur, Auslastung, Modelle und Speicher anzeigen.",
+    "displayName": "Hardware Values",
+    "description": "Show CPU and GPU temperatures, utilization, models, memory and power state.",
     "category": "Hardware",
     "defaultSection": "right",
     "allowMultiple": false,
