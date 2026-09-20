@@ -1,0 +1,34 @@
+{
+  "schemaVersion": 1,
+  "id": "kanu.system-values",
+  "name": "Systemwerte",
+  "version": "1.0.0",
+  "author": "Kanu",
+  "license": "MIT",
+  "description": "Automatisch erkannte CPU- und GPU-Systemwerte in der Omarchy-Leiste.",
+  "kinds": ["bar-widget"],
+  "entryPoints": {
+    "barWidget": "BarWidget.qml"
+  },
+  "barWidget": {
+    "displayName": "Systemwerte",
+    "description": "CPU- und GPU-Temperatur, Auslastung, Modelle und Speicher anzeigen.",
+    "category": "Hardware",
+    "defaultSection": "right",
+    "allowMultiple": false,
+    "defaults": {
+      "refreshIntervalSec": 5
+    },
+    "schema": [
+      {
+        "key": "refreshIntervalSec",
+        "type": "integer",
+        "label": "Refresh interval (seconds)",
+        "min": 2,
+        "max": 60,
+        "step": 1,
+        "defaultValue": 5
+      }
+    ]
+  }
+}
