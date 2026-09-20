@@ -15,18 +15,21 @@ Ein universelles Omarchy-Bar-Plugin für automatisch erkannte CPU- und GPU-Werte
 
 ## Installation
 
-1. Dieses Verzeichnis nach `~/.config/omarchy/plugins/user.system-values/` kopieren.
-2. In `~/.config/omarchy/shell.json` innerhalb der gewünschten Bar-Sektion eintragen:
-
-```json
-{ "id": "user.system-values" }
-```
-
-3. Die Omarchy-Shell neu laden:
+Direkt aus GitHub installieren und aktivieren:
 
 ```bash
-omarchy restart shell
+omarchy plugin add https://github.com/the0Kanu/omarchy-system-values --enable
 ```
+
+Falls das Plugin in einen bestimmten Bar-Bereich verschoben werden soll:
+
+```bash
+omarchy bar move user.system-values --section right
+```
+
+Die Installation legt das Plugin automatisch unter
+`~/.config/omarchy/plugins/user.system-values/` ab und aktiviert es in der
+Omarchy-Shell.
 
 ## Entfernung
 
