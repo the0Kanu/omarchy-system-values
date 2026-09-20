@@ -28,6 +28,13 @@ Ein universelles Omarchy-Bar-Plugin für automatisch erkannte CPU- und GPU-Werte
 omarchy restart shell
 ```
 
+## Entfernung
+
+```bash
+omarchy plugin remove kanu.system-values
+omarchy restart shell
+```
+
 Voraussetzungen: `bash`, `awk`, `sed`, `lspci` und optional `nvidia-smi` für NVIDIA-Werte.
 
 ## Debugging
