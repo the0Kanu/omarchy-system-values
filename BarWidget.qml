@@ -40,6 +40,38 @@ BarWidget {
   function close() { popupOpen = false }
   function toggle() { popupOpen = !popupOpen }
 
+  function persistSettings(values) {
+    var entry = { id: root.moduleName }
+    for (var existing in root.settings) if (existing !== "id") entry[existing] = root.settings[existing]
+    for (var key in values) entry[key] = values[key]
+    root.settings = entry
+    if (root.bar && root.bar.shell && typeof root.bar.shell.updateEntryInline === "function")
+      root.bar.shell.updateEntryInline(root.moduleName, entry)
+  }
+
+  function changeSetting(key, value, minimum, maximum) {
+    var next = Math.round(Number(value))
+    if (!isFinite(next)) return
+    next = Math.max(minimum, Math.min(maximum, next))
+    var values = {}
+    values[key] = next
+    persistSettings(values)
+  }
+
+  function changeHighTemperature(value) {
+    var next = Math.max(60, Math.min(110, Math.round(Number(value))))
+    if (!isFinite(next)) return
+    var values = { highTemperatureC: next }
+    if (root.clearTemperatureC >= next) values.clearTemperatureC = Math.max(40, next - 1)
+    persistSettings(values)
+  }
+
+  function toggleSetting(key, current) {
+    var values = {}
+    values[key] = !current
+    persistSettings(values)
+  }
+
   function refresh() {
     if (refreshing || !statusProcess) return
     refreshing = true
@@ -283,6 +315,202 @@ BarWidget {
         color: root.urgent
         font.family: root.bar ? root.bar.fontFamily : Style.font.family
         font.pixelSize: Style.font.caption
+      }
+
+      Column {
+        width: parent.width
+        spacing: Style.space(4)
+
+        Text {
+          text: "Notification settings"
+          color: root.foreground
+          font.family: root.bar ? root.bar.fontFamily : Style.font.family
+          font.pixelSize: Style.font.subtitle
+          font.bold: true
+        }
+
+        Item {
+          width: parent.width
+          height: Math.max(24, notificationsSwitch.implicitHeight)
+          Text {
+            anchors.left: parent.left
+            anchors.verticalCenter: parent.verticalCenter
+            text: "Hardware alerts"
+            color: root.foreground
+            font.family: root.bar ? root.bar.fontFamily : Style.font.family
+            font.pixelSize: Style.font.bodySmall
+          }
+          ToggleSwitch {
+            id: notificationsSwitch
+            anchors.right: parent.right
+            anchors.verticalCenter: parent.verticalCenter
+            checked: root.notificationsEnabled
+            foreground: root.foreground
+            onToggled: root.toggleSetting("notificationsEnabled", root.notificationsEnabled)
+          }
+        }
+
+        Item {
+          width: parent.width
+          height: Math.max(24, sensorErrorsSwitch.implicitHeight)
+          Text {
+            anchors.left: parent.left
+            anchors.verticalCenter: parent.verticalCenter
+            text: "Sensor error alerts"
+            color: root.foreground
+            font.family: root.bar ? root.bar.fontFamily : Style.font.family
+            font.pixelSize: Style.font.bodySmall
+          }
+          ToggleSwitch {
+            id: sensorErrorsSwitch
+            anchors.right: parent.right
+            anchors.verticalCenter: parent.verticalCenter
+            checked: root.notifySensorErrors
+            foreground: root.foreground
+            onToggled: root.toggleSetting("notifySensorErrors", root.notifySensorErrors)
+          }
+        }
+
+        Item {
+          width: parent.width
+          height: thresholdRow.implicitHeight
+          Text {
+            anchors.left: parent.left
+            anchors.verticalCenter: parent.verticalCenter
+            text: "High temperature"
+            color: root.foreground
+            font.family: root.bar ? root.bar.fontFamily : Style.font.family
+            font.pixelSize: Style.font.bodySmall
+          }
+          Row {
+            id: thresholdRow
+            anchors.right: parent.right
+            spacing: Style.space(3)
+            Button {
+              text: "−"
+              width: Style.space(28)
+              focusable: true
+              onClicked: root.changeHighTemperature(root.highTemperatureC - 1)
+            }
+            Text {
+              width: Style.space(52)
+              text: Math.round(root.highTemperatureC) + " °C"
+              color: root.foreground
+              horizontalAlignment: Text.AlignHCenter
+              anchors.verticalCenter: parent.verticalCenter
+              font.family: root.bar ? root.bar.fontFamily : Style.font.family
+              font.pixelSize: Style.font.bodySmall
+            }
+            Button {
+              text: "+"
+              width: Style.space(28)
+              focusable: true
+              onClicked: root.changeHighTemperature(root.highTemperatureC + 1)
+            }
+          }
+        }
+
+        Item {
+          width: parent.width
+          height: clearThresholdRow.implicitHeight
+          Text {
+            anchors.left: parent.left
+            anchors.verticalCenter: parent.verticalCenter
+            text: "Clear below"
+            color: root.foreground
+            font.family: root.bar ? root.bar.fontFamily : Style.font.family
+            font.pixelSize: Style.font.bodySmall
+          }
+          Row {
+            id: clearThresholdRow
+            anchors.right: parent.right
+            spacing: Style.space(3)
+            Button {
+              text: "−"
+              width: Style.space(28)
+              focusable: true
+              onClicked: root.changeSetting("clearTemperatureC", root.clearTemperatureC - 1, 40, Math.round(root.highTemperatureC - 1))
+            }
+            Text {
+              width: Style.space(52)
+              text: Math.round(root.clearTemperatureC) + " °C"
+              color: root.foreground
+              horizontalAlignment: Text.AlignHCenter
+              anchors.verticalCenter: parent.verticalCenter
+              font.family: root.bar ? root.bar.fontFamily : Style.font.family
+              font.pixelSize: Style.font.bodySmall
+            }
+            Button {
+              text: "+"
+              width: Style.space(28)
+              focusable: true
+              onClicked: root.changeSetting("clearTemperatureC", root.clearTemperatureC + 1, 40, Math.round(root.highTemperatureC - 1))
+            }
+          }
+        }
+
+        Item {
+          width: parent.width
+          height: samplesRow.implicitHeight
+          Text {
+            anchors.left: parent.left
+            anchors.verticalCenter: parent.verticalCenter
+            text: "Consecutive samples"
+            color: root.foreground
+            font.family: root.bar ? root.bar.fontFamily : Style.font.family
+            font.pixelSize: Style.font.bodySmall
+          }
+          Row {
+            id: samplesRow
+            anchors.right: parent.right
+            spacing: Style.space(3)
+            Button { text: "−"; width: Style.space(28); focusable: true; onClicked: root.changeSetting("requiredAlertSamples", root.requiredAlertSamples - 1, 1, 10) }
+            Text { width: Style.space(52); text: root.requiredAlertSamples; color: root.foreground; horizontalAlignment: Text.AlignHCenter; anchors.verticalCenter: parent.verticalCenter; font.family: root.bar ? root.bar.fontFamily : Style.font.family; font.pixelSize: Style.font.bodySmall }
+            Button { text: "+"; width: Style.space(28); focusable: true; onClicked: root.changeSetting("requiredAlertSamples", root.requiredAlertSamples + 1, 1, 10) }
+          }
+        }
+
+        Item {
+          width: parent.width
+          height: cooldownRow.implicitHeight
+          Text {
+            anchors.left: parent.left
+            anchors.verticalCenter: parent.verticalCenter
+            text: "Alert cooldown"
+            color: root.foreground
+            font.family: root.bar ? root.bar.fontFamily : Style.font.family
+            font.pixelSize: Style.font.bodySmall
+          }
+          Row {
+            id: cooldownRow
+            anchors.right: parent.right
+            spacing: Style.space(3)
+            Button { text: "−"; width: Style.space(28); focusable: true; onClicked: root.changeSetting("alertCooldownMinutes", root.alertCooldownMinutes - 1, 0, 120) }
+            Text { width: Style.space(52); text: root.alertCooldownMinutes + " min"; color: root.foreground; horizontalAlignment: Text.AlignHCenter; anchors.verticalCenter: parent.verticalCenter; font.family: root.bar ? root.bar.fontFamily : Style.font.family; font.pixelSize: Style.font.bodySmall }
+            Button { text: "+"; width: Style.space(28); focusable: true; onClicked: root.changeSetting("alertCooldownMinutes", root.alertCooldownMinutes + 1, 0, 120) }
+          }
+        }
+
+        Item {
+          width: parent.width
+          height: durationRow.implicitHeight
+          Text {
+            anchors.left: parent.left
+            anchors.verticalCenter: parent.verticalCenter
+            text: "Notification duration"
+            color: root.foreground
+            font.family: root.bar ? root.bar.fontFamily : Style.font.family
+            font.pixelSize: Style.font.bodySmall
+          }
+          Row {
+            id: durationRow
+            anchors.right: parent.right
+            spacing: Style.space(3)
+            Button { text: "−"; width: Style.space(28); focusable: true; onClicked: root.changeSetting("notificationExpireSeconds", root.notificationExpireSeconds - 1, 1, 30) }
+            Text { width: Style.space(52); text: root.notificationExpireSeconds + " s"; color: root.foreground; horizontalAlignment: Text.AlignHCenter; anchors.verticalCenter: parent.verticalCenter; font.family: root.bar ? root.bar.fontFamily : Style.font.family; font.pixelSize: Style.font.bodySmall }
+            Button { text: "+"; width: Style.space(28); focusable: true; onClicked: root.changeSetting("notificationExpireSeconds", root.notificationExpireSeconds + 1, 1, 30) }
+          }
+        }
       }
 
       Column {
