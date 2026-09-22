@@ -22,6 +22,13 @@ BarWidget {
   property bool refreshing: false
   property string omarchyPath: Quickshell.env("OMARCHY_PATH")
   readonly property int refreshIntervalSec: setting("refreshIntervalSec", 10)
+  readonly property bool notificationsEnabled: setting("notificationsEnabled", true)
+  readonly property bool notifySensorErrors: setting("notifySensorErrors", false)
+  readonly property real highTemperatureC: Math.max(60, Math.min(110, Number(setting("highTemperatureC", 90))))
+  readonly property real clearTemperatureC: Math.min(highTemperatureC - 1, Math.max(40, Number(setting("clearTemperatureC", 85))))
+  readonly property int requiredAlertSamples: Math.max(1, Math.min(10, Number(setting("requiredAlertSamples", 3))))
+  readonly property int alertCooldownMinutes: Math.max(0, Math.min(120, Number(setting("alertCooldownMinutes", 10))))
+  readonly property int notificationExpireSeconds: Math.max(1, Math.min(30, Number(setting("notificationExpireSeconds", 5))))
   readonly property color foreground: "#cacccc"
   readonly property color urgent: "#a55555"
   readonly property string configHome: Quickshell.env("XDG_CONFIG_HOME") !== ""
@@ -45,7 +52,7 @@ BarWidget {
       root.omarchyPath + "/bin/omarchy-notification-send",
       "--app-name", "Hardware Values",
       "--urgency", "low",
-      "--expire-time", "5000",
+      "--expire-time", String(root.notificationExpireSeconds * 1000),
       headline,
       body
     ])
@@ -54,13 +61,20 @@ BarWidget {
   function evaluateNotification() {
     var key = ""
     var body = ""
-    if (root.queryError !== "") {
+    if (!root.notificationsEnabled) {
+      root.lastNotificationKey = ""
+      root.pendingNotificationSamples = 0
+      root.coolSamples = 0
+      root.notificationLatched = false
+      return
+    }
+    if (root.notifySensorErrors && root.queryError !== "") {
       key = "query-error"
       body = root.queryError
-    } else if (root.cpu.status !== "ok") {
+    } else if (root.notifySensorErrors && root.cpu.status !== "ok") {
       key = "cpu-error"
       body = "CPU temperature is unavailable."
-    } else if (root.hottestComponentTemperature >= 90) {
+    } else if (root.hottestComponentTemperature >= root.highTemperatureC) {
       key = "high-temperature"
       body = "Hardware temperature is high: " + root.hottestComponentTemperature.toFixed(1) + " °C"
     }
@@ -71,7 +85,12 @@ BarWidget {
       coolSamples: root.coolSamples,
       latched: root.notificationLatched,
       lastSentAt: root.lastNotificationAt
-    }, key, Date.now(), root.hottestComponentTemperature < 85 && root.queryError === "" && root.cpu.status === "ok")
+    }, key, Date.now(), root.hottestComponentTemperature < root.clearTemperatureC
+      && root.queryError === "" && root.cpu.status === "ok", {
+        alertSamples: root.requiredAlertSamples,
+        clearSamples: root.requiredAlertSamples,
+        cooldownMs: root.alertCooldownMinutes * 60 * 1000
+      })
     root.lastNotificationKey = state.pendingKey
     root.pendingNotificationSamples = state.pendingSamples
     root.coolSamples = state.coolSamples
@@ -153,9 +172,9 @@ BarWidget {
 
   readonly property color indicatorColor: hasError
     ? urgent
-    : hottestComponentTemperature >= 90
-      ? urgent
-      : hottestComponentTemperature >= 85
+      : hottestComponentTemperature >= highTemperatureC
+        ? urgent
+        : hottestComponentTemperature >= clearTemperatureC
         ? Color.accent
         : foreground
 

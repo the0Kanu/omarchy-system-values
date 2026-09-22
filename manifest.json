@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "user.system-values",
   "name": "Hardware Values",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "author": "Omarchy Community",
   "license": "MIT",
   "description": "Automatically detected CPU and GPU hardware values in the Omarchy bar.",
@@ -18,6 +18,13 @@
     "allowMultiple": false,
     "defaults": {
       "refreshIntervalSec": 10
+      ,"notificationsEnabled": true
+      ,"notifySensorErrors": false
+      ,"highTemperatureC": 90
+      ,"clearTemperatureC": 85
+      ,"requiredAlertSamples": 3
+      ,"alertCooldownMinutes": 10
+      ,"notificationExpireSeconds": 5
     },
     "schema": [
       {
@@ -28,6 +35,63 @@
         "max": 60,
         "step": 1,
         "defaultValue": 10
+      },
+      {
+        "key": "notificationsEnabled",
+        "type": "boolean",
+        "label": "Enable hardware notifications",
+        "defaultValue": true
+      },
+      {
+        "key": "notifySensorErrors",
+        "type": "boolean",
+        "label": "Notify about sensor errors",
+        "defaultValue": false
+      },
+      {
+        "key": "highTemperatureC",
+        "type": "integer",
+        "label": "High temperature threshold (°C)",
+        "min": 60,
+        "max": 110,
+        "step": 1,
+        "defaultValue": 90
+      },
+      {
+        "key": "clearTemperatureC",
+        "type": "integer",
+        "label": "Clear temperature threshold (°C)",
+        "min": 40,
+        "max": 109,
+        "step": 1,
+        "defaultValue": 85
+      },
+      {
+        "key": "requiredAlertSamples",
+        "type": "integer",
+        "label": "Consecutive alert samples",
+        "min": 1,
+        "max": 10,
+        "step": 1,
+        "defaultValue": 3
+      },
+      {
+        "key": "alertCooldownMinutes",
+        "type": "integer",
+        "label": "Alert cooldown (minutes)",
+        "min": 0,
+        "max": 120,
+        "step": 1,
+        "defaultValue": 10
+      },
+      {
+        "key": "notificationExpireSeconds",
+        "type": "integer",
+        "label": "Notification duration (seconds)",
+        "min": 1,
+        "max": 30,
+        "step": 1,
+        "defaultValue": 5
       }
     ]
   }

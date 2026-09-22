@@ -12,7 +12,7 @@ A universal Omarchy bar plugin for automatically detected CPU and GPU values.
 - Only detected hardware components are displayed
 - Runtime logging with timestamps and 512 KiB rotation
 - Hardware warnings through Omarchy notifications with a 5-second timeout
-- Alerts require 3 consecutive samples, clear only after temperatures stay below 85 °C for 3 samples, and repeat at most once every 10 minutes
+- Notifications are configurable: enable/disable alerts, sensor-error alerts, high/clear temperature thresholds, consecutive samples, cooldown and display duration
 - Concurrent status queries synchronized with a state-file lock
 - Standard refresh interval: 10 seconds; right-click for a manual refresh
 - No changes to drivers or system services
