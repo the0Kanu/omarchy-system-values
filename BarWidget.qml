@@ -3,6 +3,7 @@ import Quickshell
 import Quickshell.Io
 import qs.Commons
 import qs.Ui
+import "NotificationPolicy.js" as NotificationPolicy
 
 BarWidget {
   id: root
@@ -13,6 +14,10 @@ BarWidget {
   property var cpu: ({ temperature: "--", source: "", status: "error" })
   property string queryError: ""
   property string lastNotificationKey: ""
+  property int pendingNotificationSamples: 0
+  property int coolSamples: 0
+  property bool notificationLatched: false
+  property double lastNotificationAt: 0
   property bool popupOpen: false
   property bool refreshing: false
   property string omarchyPath: Quickshell.env("OMARCHY_PATH")
@@ -58,13 +63,26 @@ BarWidget {
     } else if (root.hottestComponentTemperature >= 90) {
       key = "high-temperature"
       body = "Hardware temperature is high: " + root.hottestComponentTemperature.toFixed(1) + " °C"
-    } else {
-      root.lastNotificationKey = ""
-      return
     }
-    if (key === root.lastNotificationKey) return
-    root.lastNotificationKey = key
-    root.sendNotification("Hardware Values", body)
+
+    var state = NotificationPolicy.advance({
+      pendingKey: root.lastNotificationKey,
+      pendingSamples: root.pendingNotificationSamples,
+      coolSamples: root.coolSamples,
+      latched: root.notificationLatched,
+      lastSentAt: root.lastNotificationAt
+    }, key, Date.now(), root.hottestComponentTemperature < 85 && root.queryError === "" && root.cpu.status === "ok")
+    root.lastNotificationKey = state.pendingKey
+    root.pendingNotificationSamples = state.pendingSamples
+    root.coolSamples = state.coolSamples
+    root.notificationLatched = state.latched
+    root.lastNotificationAt = state.lastSentAt
+    if (state.notify) root.sendNotification("Hardware Values", body)
+  }
+
+  function shown(value, suffix) {
+    var text = String(value === undefined || value === null ? "" : value).trim()
+    return text === "" || text === "--" ? "n/a" : text + suffix
   }
 
   function parseStatus(raw) {
@@ -264,7 +282,7 @@ BarWidget {
           width: parent.width
           text: root.cpu.status === "ok"
             ? "Model: " + root.cpu.name
-              + "\nTemperature: " + root.cpu.temperature + " °C   Utilization: " + root.cpu.utilization + " %"
+              + "\nTemperature: " + root.shown(root.cpu.temperature, " °C") + "   Utilization: " + root.shown(root.cpu.utilization, " %")
               + "\nLoad (1 min): " + root.cpu.load + "   Source: " + root.cpu.source
             : "Temperature unavailable"
           textFormat: Text.PlainText
@@ -317,8 +335,9 @@ BarWidget {
           Text {
             width: parent.width
             text: modelData.status === "ok"
-              ? "Temperature: " + modelData.temperature + " °C   Utilization: " + modelData.utilization + " %"
-                + "\nMemory: " + modelData.memoryUsed + " / " + modelData.memoryTotal + " MiB"
+              ? "Temperature: " + root.shown(modelData.temperature, " °C") + "   Utilization: " + root.shown(modelData.utilization, " %")
+                + "\nMemory: " + (String(modelData.memoryUsed) === "--" || String(modelData.memoryTotal) === "--"
+                  ? "n/a" : modelData.memoryUsed + " / " + modelData.memoryTotal + " MiB")
               : "Temperature unavailable\nGPU does not provide a valid device status"
             textFormat: Text.PlainText
             color: modelData.status === "ok" ? Qt.darker(root.foreground, 1.25) : root.urgent
