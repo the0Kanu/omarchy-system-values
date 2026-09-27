@@ -5,7 +5,7 @@ const vm = require("node:vm")
 
 const context = {}
 const policySource = fs.readFileSync(path.join(__dirname, "..", "NotificationPolicy.js"), "utf8")
-vm.runInNewContext(policySource.replace(/^pragma library\s*/, ""), context)
+vm.runInNewContext(policySource.replace(/^\.?pragma library\s*/, ""), context)
 const advance = context.advance
 const blank = () => ({ pendingKey: "", pendingSamples: 0, coolSamples: 0, latched: false, lastSentAt: 0 })
 

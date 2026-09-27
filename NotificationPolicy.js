@@ -1,4 +1,4 @@
-pragma library
+.pragma library
 
 // Require consecutive alert samples, then latch until consecutive normal samples.
 // A cooldown suppresses rapid repeat alerts across brief episodes.

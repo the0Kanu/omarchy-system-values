@@ -28,7 +28,7 @@ BarWidget {
   readonly property real clearTemperatureC: Math.min(highTemperatureC - 1, Math.max(40, Number(setting("clearTemperatureC", 85))))
   readonly property int requiredAlertSamples: Math.max(1, Math.min(10, Number(setting("requiredAlertSamples", 3))))
   readonly property int alertCooldownMinutes: Math.max(0, Math.min(120, Number(setting("alertCooldownMinutes", 10))))
-  readonly property int notificationExpireSeconds: Math.max(1, Math.min(30, Number(setting("notificationExpireSeconds", 5))))
+  readonly property int notificationExpireSeconds: Math.max(5, Math.min(30, Number(setting("notificationExpireSeconds", 5))))
   readonly property color foreground: "#cacccc"
   readonly property color urgent: "#a55555"
   readonly property string configHome: Quickshell.env("XDG_CONFIG_HOME") !== ""
@@ -88,6 +88,7 @@ BarWidget {
       headline,
       body
     ])
+    hardwareNotificationDismissTimer.restart()
   }
 
   function evaluateNotification() {
@@ -248,6 +249,21 @@ BarWidget {
     running: true
     repeat: true
     onTriggered: root.refresh()
+  }
+
+  Timer {
+    id: hardwareNotificationDismissTimer
+    interval: Math.max(5000, root.notificationExpireSeconds * 1000)
+    repeat: false
+    onTriggered: {
+      if (!root.omarchyPath) return
+      Quickshell.execDetached([
+        root.omarchyPath + "/bin/omarchy-shell",
+        "notifications",
+        "dismiss",
+        "Hardware Values"
+      ])
+    }
   }
 
   WidgetButton {
@@ -506,9 +522,9 @@ BarWidget {
             id: durationRow
             anchors.right: parent.right
             spacing: Style.space(3)
-            Button { text: "−"; width: Style.space(28); focusable: true; onClicked: root.changeSetting("notificationExpireSeconds", root.notificationExpireSeconds - 1, 1, 30) }
+            Button { text: "−"; width: Style.space(28); focusable: true; onClicked: root.changeSetting("notificationExpireSeconds", root.notificationExpireSeconds - 1, 5, 30) }
             Text { width: Style.space(52); text: root.notificationExpireSeconds + " s"; color: root.foreground; horizontalAlignment: Text.AlignHCenter; anchors.verticalCenter: parent.verticalCenter; font.family: root.bar ? root.bar.fontFamily : Style.font.family; font.pixelSize: Style.font.bodySmall }
-            Button { text: "+"; width: Style.space(28); focusable: true; onClicked: root.changeSetting("notificationExpireSeconds", root.notificationExpireSeconds + 1, 1, 30) }
+            Button { text: "+"; width: Style.space(28); focusable: true; onClicked: root.changeSetting("notificationExpireSeconds", root.notificationExpireSeconds + 1, 5, 30) }
           }
         }
       }
