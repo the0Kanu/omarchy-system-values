@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 set -u
+umask 077
 
 # Output records:
 # CPU<TAB>model<TAB>temperature<TAB>utilization<TAB>load<TAB>source<TAB>status
@@ -7,12 +8,20 @@ set -u
 
 log_dir="${XDG_STATE_HOME:-$HOME/.local/state}/omarchy-system-values"
 log_file="$log_dir/system-values.log"
-if ! mkdir -p "$log_dir" 2>/dev/null || ! printf '' >> "$log_file" 2>/dev/null; then
-  log_dir="${TMPDIR:-/tmp}/omarchy-system-values"
-  log_file="$log_dir/system-values.log"
-  mkdir -p "$log_dir" 2>/dev/null || true
+state_enabled=0
+if mkdir -p -m 700 -- "$log_dir" 2>/dev/null \
+  && [[ -d "$log_dir" && ! -L "$log_dir" ]] \
+  && [[ "$(stat -c %u -- "$log_dir" 2>/dev/null)" == "$(id -u)" ]] \
+  && chmod 700 -- "$log_dir" 2>/dev/null \
+  && [[ ! -L "$log_file" ]] \
+  && { : >> "$log_file"; } 2>/dev/null; then
+  state_enabled=1
+else
+  # Never fall back to a shared predictable path such as /tmp.
+  # Sensor reporting remains available without persistent log/state writes.
+  log_file=/dev/null
 fi
-if [[ -f "$log_file" && $(stat -c %s "$log_file" 2>/dev/null || echo 0) -gt 524288 ]]; then
+if (( state_enabled )) && [[ -f "$log_file" && $(stat -c %s "$log_file" 2>/dev/null || echo 0) -gt 524288 ]]; then
   mv -f "$log_file" "$log_file.1" 2>/dev/null || true
 fi
 log() {
@@ -48,22 +57,29 @@ done
 read -r _ user nice system idle iowait irq softirq steal _ < /proc/stat
 now_total=$((user + nice + system + idle + iowait + irq + softirq + steal))
 now_idle=$((idle + iowait))
-state_file="$log_dir/cpu.state"
 util="--"
-state_lock="$state_file.lock"
-if exec 9>"$state_lock" 2>/dev/null && command -v flock >/dev/null 2>&1; then
-  flock -x 9 2>/dev/null || true
-fi
-if [[ -r "$state_file" ]]; then
-  read -r old_total old_idle < "$state_file" || true
-  total_delta=$((now_total - old_total))
-  idle_delta=$((now_idle - old_idle))
-  if (( total_delta > 0 )); then
-    util=$(awk -v busy="$((total_delta - idle_delta))" -v total="$total_delta" 'BEGIN { printf "%.1f", 100 * busy / total }')
+if (( state_enabled )); then
+  state_file="$log_dir/cpu.state"
+  state_lock="$state_file.lock"
+  # The directory is private (0700); reject planted leaf symlinks as well.
+  if [[ ! -L "$state_file" && ! -L "$state_lock" \
+    && ( ! -e "$state_file" || -f "$state_file" ) \
+    && ( ! -e "$state_lock" || -f "$state_lock" ) ]]; then
+    if exec 9>"$state_lock" 2>/dev/null && command -v flock >/dev/null 2>&1; then
+      flock -x 9 2>/dev/null || true
+    fi
+    if [[ -r "$state_file" ]]; then
+      read -r old_total old_idle < "$state_file" || true
+      total_delta=$((now_total - old_total))
+      idle_delta=$((now_idle - old_idle))
+      if (( total_delta > 0 )); then
+        util=$(awk -v busy="$((total_delta - idle_delta))" -v total="$total_delta" 'BEGIN { printf "%.1f", 100 * busy / total }')
+      fi
+    fi
+    printf '%s %s\n' "$now_total" "$now_idle" > "$state_file"
+    exec 9>&- 2>/dev/null || true
   fi
 fi
-printf '%s %s\n' "$now_total" "$now_idle" > "$state_file"
-exec 9>&- 2>/dev/null || true
 load=$(awk '{print $1}' /proc/loadavg)
 
 if [[ -n "$cpu_temp" ]]; then
@@ -77,6 +93,15 @@ fi
 gpu_index=0
 if command -v nvidia-smi >/dev/null 2>&1; then
   nvidia_count=0
+  nvidia_status=0
+  nvidia_output=$(timeout --signal=TERM --kill-after=1s 5s nvidia-smi \
+    --query-gpu=index,name,temperature.gpu,utilization.gpu,memory.used,memory.total,pstate \
+    --format=csv,noheader,nounits 2>/dev/null) || nvidia_status=$?
+  if (( nvidia_status == 124 || nvidia_status == 137 )); then
+    log WARN "nvidia-smi query timed out after 5 seconds"
+  elif (( nvidia_status != 0 )); then
+    log WARN "nvidia-smi query failed with exit code $nvidia_status"
+  fi
   while IFS=',' read -r index name temp util mem_used mem_total pstate; do
     name=$(printf '%s' "$name" | xargs)
     [[ -n "$name" ]] || continue
@@ -89,8 +114,10 @@ if command -v nvidia-smi >/dev/null 2>&1; then
     log INFO "NVIDIA GPU detected: index=$index model=$name temp=${temp}C util=${util}% memory=${mem_used}/${mem_total}MiB state=$pstate"
     gpu_index=$((gpu_index + 1))
     nvidia_count=$((nvidia_count + 1))
-  done < <(nvidia-smi --query-gpu=index,name,temperature.gpu,utilization.gpu,memory.used,memory.total,pstate --format=csv,noheader,nounits 2>/dev/null || true)
-  [[ "$nvidia_count" -gt 0 ]] || log WARN "nvidia-smi is available but returned no GPU data"
+  done <<< "$nvidia_output"
+  if [[ "$nvidia_count" -eq 0 && "$nvidia_status" -eq 0 ]]; then
+    log WARN "nvidia-smi is available but returned no GPU data"
+  fi
 fi
 
 # Detect non-NVIDIA display adapters from PCI. NVIDIA devices are already

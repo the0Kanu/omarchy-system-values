@@ -15,10 +15,22 @@ details=()
 pass() { score=$((score + 1)); details+=("PASS: $1"); }
 fail() { details+=("FAIL: $1"); }
 
-if bash -n "$HELPER"; then pass "Helper syntax"; else fail "Helper syntax"; fi
+if ! stderr_file=$(mktemp "${TMPDIR:-/tmp}/system-values-control.XXXXXX"); then
+  fail "Cannot create private temporary stderr file"
+  printf 'BEWERTUNG %s/10\n' "$score"
+  printf '%s\n' "${details[@]}"
+  exit 1
+fi
+trap 'rm -f -- "$stderr_file"' EXIT
+
+if bash -n "$HELPER" && bash "$BASE/tests/system-values-state-path.test.sh"; then
+  pass "Helper syntax and state-path security regression"
+else
+  fail "Helper syntax or state-path security regression"
+fi
 if command -v jq >/dev/null 2>&1 && jq empty "$MANIFEST" && jq empty "$SHELL_CONFIG"; then pass "JSON configuration"; else fail "JSON configuration"; fi
 
-output=$(bash "$HELPER" 2>/tmp/system-values-control.err)
+output=$(bash "$HELPER" 2>"$stderr_file")
 if [[ $? -eq 0 ]]; then pass "Helper execution"; else fail "Helper execution"; fi
 
 cpu_count=$(printf '%s\n' "$output" | awk -F '\t' '$1 == "CPU" {n++} END {print n+0}')
@@ -32,12 +44,16 @@ else
   fail "Runtime log missing or unreadable"
 fi
 
-if [[ -z "$(cat /tmp/system-values-control.err 2>/dev/null)" ]]; then pass "No helper stderr output"; else fail "Helper reported stderr output"; fi
+if [[ ! -s "$stderr_file" ]]; then pass "No helper stderr output"; else fail "Helper reported stderr output"; fi
 
-if ! journalctl --user --since "5 minutes ago" --no-pager 2>/dev/null | rg -qi "system-values.*(error|failed)|BarWidget.qml.*error"; then
-  pass "No recent Quickshell plugin errors"
-else
+journal_output=$(journalctl --user --since "5 minutes ago" --no-pager 2>/dev/null)
+journal_status=$?
+if (( journal_status != 0 )); then
+  fail "User journal unavailable; plugin errors could not be checked"
+elif printf '%s\n' "$journal_output" | rg -qi "system-values.*(error|failed)|BarWidget.qml.*error"; then
   fail "Recent Quickshell plugin errors found"
+else
+  pass "No recent Quickshell plugin errors"
 fi
 
 if [[ "$output" == *$'CPU\t'*$'\tok'* ]]; then pass "CPU sensor status valid"; else fail "CPU sensor status invalid"; fi

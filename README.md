@@ -11,6 +11,8 @@ A universal Omarchy bar plugin for automatically detected CPU and GPU values.
 - Temperature, utilization, memory and performance state when supported by the driver
 - Only detected hardware components are displayed
 - Runtime logging with timestamps and 512 KiB rotation
+- Plugin log/state storage is private (`0700` directory, `0600` new files); if the state path is unavailable, persistence is disabled instead of falling back to shared `/tmp`, while sensor output continues
+- NVIDIA queries are time-bounded so a stuck driver utility cannot stall the status poll indefinitely
 - Hardware warnings through Omarchy notifications; the toast is dismissed after its configured 5–30-second duration even while hovered
 - Notifications are configurable: enable/disable alerts, sensor-error alerts, high/clear temperature thresholds, consecutive samples, cooldown and display duration
 - The same notification settings can be changed directly in the Hardware Values popup and are saved to the bar configuration
@@ -41,7 +43,7 @@ omarchy plugin remove user.system-values
 omarchy restart shell
 ```
 
-Requirements: `bash`, `awk`, `sed`, `lspci`, and optionally `nvidia-smi` for NVIDIA metrics.
+Requirements: `bash`, `awk`, `sed`, `lspci`, and optionally `nvidia-smi` plus `timeout` (GNU coreutils) for NVIDIA metrics.
 
 ## Debugging
 
@@ -63,8 +65,14 @@ Control agent:
 ~/.config/omarchy/plugins/user.system-values/system-values-control.sh
 ```
 
-The control agent checks syntax, JSON, hardware detection, logging,
-Quickshell errors and duplicate components. The target score is at least 9/10.
+The control agent checks syntax, state-path symlink regressions, JSON, hardware
+detection, logging, Quickshell errors and duplicate components. The target score
+is at least 9/10. Run the path-security test directly with:
+
+```bash
+~/.config/omarchy/plugins/user.system-values/tests/system-values-state-path.test.sh
+~/.config/omarchy/plugins/user.system-values/tests/system-values-nvidia-timeout.test.sh
+```
 
 ## License
 

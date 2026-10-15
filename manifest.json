@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "user.system-values",
   "name": "Hardware Values",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "author": "Omarchy Community",
   "license": "MIT",
   "description": "Automatically detected CPU and GPU hardware values in the Omarchy bar.",
