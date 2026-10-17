@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.0.6 — 2026-10-17
+
+- Put notification controls behind a collapsible dropdown in the Hardware Values popup; settings start collapsed and reset on popup open.
+
 ## 1.0.5 — 2026-10-15
 
 - Remove the predictable `/tmp` fallback for plugin logs and CPU state; preserve sensor output when persistence is unavailable.

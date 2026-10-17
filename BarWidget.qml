@@ -19,6 +19,7 @@ BarWidget {
   property bool notificationLatched: false
   property double lastNotificationAt: 0
   property bool popupOpen: false
+  property bool settingsExpanded: false
   property bool refreshing: false
   property string omarchyPath: Quickshell.env("OMARCHY_PATH")
   readonly property int refreshIntervalSec: setting("refreshIntervalSec", 10)
@@ -36,9 +37,19 @@ BarWidget {
     : Quickshell.env("HOME") + "/.config"
   readonly property string helperPath: root.configHome + "/omarchy/plugins/user.system-values/system-values.sh"
 
-  function open() { popupOpen = true }
+  onPopupOpenChanged: {
+    if (popupOpen) settingsExpanded = false
+  }
+
+  function open() {
+    settingsExpanded = false
+    popupOpen = true
+  }
   function close() { popupOpen = false }
-  function toggle() { popupOpen = !popupOpen }
+  function toggle() {
+    if (!popupOpen) settingsExpanded = false
+    popupOpen = !popupOpen
+  }
 
   function persistSettings(values) {
     var entry = { id: root.moduleName }
@@ -333,17 +344,17 @@ BarWidget {
         font.pixelSize: Style.font.caption
       }
 
+      Button {
+        width: parent.width
+        text: (root.settingsExpanded ? "▾" : "▸") + " Notification settings"
+        focusable: true
+        onClicked: root.settingsExpanded = !root.settingsExpanded
+      }
+
       Column {
         width: parent.width
         spacing: Style.space(4)
-
-        Text {
-          text: "Notification settings"
-          color: root.foreground
-          font.family: root.bar ? root.bar.fontFamily : Style.font.family
-          font.pixelSize: Style.font.subtitle
-          font.bold: true
-        }
+        visible: root.settingsExpanded
 
         Item {
           width: parent.width

@@ -15,7 +15,7 @@ A universal Omarchy bar plugin for automatically detected CPU and GPU values.
 - NVIDIA queries are time-bounded so a stuck driver utility cannot stall the status poll indefinitely
 - Hardware warnings through Omarchy notifications; the toast is dismissed after its configured 5–30-second duration even while hovered
 - Notifications are configurable: enable/disable alerts, sensor-error alerts, high/clear temperature thresholds, consecutive samples, cooldown and display duration
-- The same notification settings can be changed directly in the Hardware Values popup and are saved to the bar configuration
+- Notification settings are grouped behind a collapsible dropdown in the Hardware Values popup; changes are saved to the bar configuration
 - Concurrent status queries synchronized with a state-file lock
 - Standard refresh interval: 10 seconds; right-click for a manual refresh
 - No changes to drivers or system services
